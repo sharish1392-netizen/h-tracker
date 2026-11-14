@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Harish — Personal Habit & Health Tracker</title>
+  <link rel="manifest" href="./manifest.json" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Animated Rising Water Bottle */
+    .water-fill {
+      transition: height 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .wave {
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 200%;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 40%;
+      animation: waveMove 4s linear infinite;
+    }
+    @keyframes waveMove {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP HEADER BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+          HS
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-slate-900 leading-tight">Personal Health OS</h1>
+          <div class="flex items-center gap-1.5 text-xs text-slate-500">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="syncLabel">Local Mode (Connect Sheet in Insights)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Stepper -->
+      <div class="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+        <button onclick="changeDate(-1)" class="px-2.5 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm rounded-lg hover:bg-white transition">&larr;</button>
+        <input type="date" id="datePicker" onchange="onDatePick(this.value)" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-800 px-1.5 focus:outline-none cursor-pointer" />
+        <button onclick="changeDate(1)" class="px-2.5 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm rounded-lg hover:bg-white transition">&rarr;</button>
+      </div>
+    </div>
+
+    <!-- Compact Live KPI Strip -->
+    <div class="max-w-4xl mx-auto px-4 pb-2.5">
+      <div class="grid grid-cols-5 gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-2 text-center">
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Habits</div>
+          <div id="kpiHabits" class="text-xs sm:text-sm font-bold text-teal-700">0/4</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Protein</div>
+          <div id="kpiProtein" class="text-xs sm:text-sm font-bold text-slate-800">0g</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Water</div>
+          <div id="kpiWater" class="text-xs sm:text-sm font-bold text-sky-600">0.0L</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Scale</div>
+          <div id="kpiWeight" class="text-xs sm:text-sm font-bold text-slate-800">-- kg</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Mood</div>
+          <div id="kpiMood" class="text-xs sm:text-sm font-bold text-amber-600">3/5</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zero-Scroll Category Tabs -->
+    <nav class="max-w-4xl mx-auto px-4 flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
+      <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm">
+        Habits
+      </button>
+      <button onclick="switchTab('food')" id="tab-food" class="tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+        Food
+      </button>
+      <button onclick="switchTab('body')" id="tab-body" class="tab-btn flex-1 min-w-[115px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+        Water &amp; Scale
+      </button>
+      <button onclick="switchTab('move')" id="tab-move" class="tab-btn flex-1 min-w-[85px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+        Move
+      </button>
+      <button onclick="switchTab('checkin')" id="tab-checkin" class="tab-btn flex-1 min-w-[88px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+        Check-in
+      </button>
+      <button onclick="switchTab('insights')" id="tab-insights" class="tab-btn flex-1 min-w-[92px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+        Insights
+      </button>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-4">
+
+    <!-- 1. HABITS TAB -->
+    <section id="panel-habits" class="tab-panel space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Daily Habits &amp; Streak Engine</h2>
+          <p class="text-xs text-slate-500">Tap to complete, or use <span class="font-semibold text-amber-700">Min</span> on busy days to protect your streak.</p>
+        </div>
+        <button onclick="openHabitModal()" class="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-xl text-xs font-semibold hover:bg-teal-100 transition">
+          + Edit / Add
+        </button>
+      </div>
+
+      <div id="habitsList" class="space-y-2.5"></div>
+    </section>
+
+    <!-- 2. FOOD JOURNAL TAB -->
+    <section id="panel-food" class="tab-panel hidden space-y-3">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-slate-900">Food Journal &amp; Macro Estimator</h2>
+          <span id="macroSummaryBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-800">0 kcal &bull; 0g P</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <select id="mealSlot" class="rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm font-medium bg-slate-50 focus:outline-none focus:border-teal-600">
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Dinner">Dinner</option>
+            <option value="Snack">Snack / Tea</option>
+          </select>
+          <input id="foodInput" type="text" placeholder="e.g., 2 masala dosas, sambar, 2 boiled eggs..." class="sm:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-teal-600" onkeydown="if(event.key==='Enter') addFoodEntry()" />
+          <button onclick="addFoodEntry()" class="bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs sm:text-sm rounded-xl px-4 py-2 transition shadow-sm">
+            + Log Meal
+          </button>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <button onclick="quickFillFood('2 dosa, sambar, 2 boiled eggs, black coffee')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition">+ Dosa &amp; Eggs</button>
+          <button onclick="quickFillFood('Rice, sambar, paruppu usili, chicken curry, curd')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition">+ South Indian Lunch</button>
+          <button onclick="quickFillFood('3 chapati, dal tadka, paneer bhurji')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition">+ Chapati &amp; Dal</button>
+        </div>
+      </div>
+
+      <!-- AI Nutrition Feedback Banner -->
+      <div id="nutritionAiBox" class="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-3.5 text-xs text-emerald-950 flex items-start gap-2.5">
+        <span class="text-base">&#10024;</span>
+        <div>
+          <div class="font-bold text-emerald-900 mb-0.5">Daily Macro Coach</div>
+          <p id="nutritionAiText">Log your first meal above to see estimated protein, carbs, fiber, and daily balance feedback.</p>
+        </div>
+      </div>
+
+      <div id="foodEntriesList" class="space-y-2"></div>
+    </section>
+
+    <!-- 3. WATER BOTTLE & SMART SCALE TAB -->
+    <section id="panel-body" class="tab-panel hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- Visual Rising Water Bottle Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Hydration Bottle</h2>
+              <div class="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                <span>Daily Goal: <strong id="waterGoalLabel" class="text-sky-700">3.0 L</strong></span>
+                <button onclick="editWaterGoal()" class="text-slate-400 hover:text-sky-700 p-0.5" title="Edit Water Goal">&#9998;</button>
+              </div>
+            </div>
+            <span id="waterPctBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700">0%</span>
+          </div>
+
+          <div class="flex items-center justify-center gap-6 my-2">
+            <!-- SVG / CSS Interactive Bottle -->
+            <div class="relative flex flex-col items-center">
+              <!-- Bottle Cap -->
+              <div class="w-10 h-3.5 bg-sky-700 rounded-t-md"></div>
+              <div class="w-12 h-2 bg-sky-200 rounded-sm"></div>
+              <!-- Bottle Body -->
+              <div class="relative w-28 h-52 rounded-3xl border-4 border-sky-600 bg-sky-50/50 overflow-hidden shadow-inner flex items-center justify-center">
+                <!-- Measurement Ticks -->
+                <div class="absolute inset-x-0 top-1/4 border-t border-dashed border-sky-300/80 z-10"></div>
+                <div class="absolute inset-x-0 top-2/4 border-t border-dashed border-sky-300/80 z-10"></div>
+                <div class="absolute inset-x-0 top-3/4 border-t border-dashed border-sky-300/80 z-10"></div>
+
+                <!-- Rising Liquid -->
+                <div id="waterLiquid" class="water-fill absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-600 to-sky-400" style="height: 0%;">
+                  <div class="wave"></div>
+                </div>
+
+                <!-- Center Readout -->
+                <div class="relative z-20 text-center bg-white/85 backdrop-blur-xs px-2.5 py-1 rounded-xl shadow-xs">
+                  <div id="waterCurrentLiters" class="text-base font-extrabold text-slate-900">0.00 L</div>
+                  <div id="waterRemainingText" class="text-[10px] font-semibold text-slate-500">3.00 L left</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Add Controls -->
+            <div class="flex flex-col gap-2 w-32">
+              <button onclick="adjustWater(250)" class="py-2.5 px-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold text-xs transition">+ 250 ml (Glass)</button>
+              <button onclick="adjustWater(500)" class="py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition">+ 500 ml (Bottle)</button>
+              <button onclick="adjustWater(1000)" class="py-2.5 px-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold text-xs transition">+ 1.0 L (Flask)</button>
+              <button onclick="adjustWater(-250)" class="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-[11px] transition">- 250 ml</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Scale & Body Weight Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Smart Scale Check-in</h2>
+              <p class="text-xs text-slate-500">Morning weigh-in &amp; body composition</p>
+            </div>
+            <span id="weightDeltaBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">Baseline</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Weight (kg)</label>
+              <input id="weightInput" type="number" step="0.1" placeholder="72.4" onchange="saveScaleData()" class="w-full text-xl font-extrabold text-slate-900 bg-transparent focus:outline-none" />
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Body Fat % (Opt)</label>
+              <input id="bodyFatInput" type="number" step="0.1" placeholder="18.2" onchange="saveScaleData()" class="w-full text-xl font-extrabold text-slate-900 bg-transparent focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- 7-Day Weight Trend Bars -->
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
+              <span>Recent Scale Trend</span>
+              <span id="targetWeightLabel" class="cursor-pointer hover:text-teal-700" onclick="editTargetWeight()">Goal: 70.0 kg &#9998;</span>
+            </div>
+            <div id="weightSparkline" class="flex items-end justify-between gap-2 h-20 pt-2"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. MOVEMENT & EXERCISE TAB -->
+    <section id="panel-move" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Movement &amp; 10K Prep Log</h2>
+            <p class="text-xs text-slate-500">Select today's primary session to track mileage &amp; effort.</p>
+          </div>
+          <span id="moveBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800">Rest Day</span>
+        </div>
+
+        <!-- Activity Type Pills -->
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="workoutTypeGrid">
+          <button onclick="setWorkoutType('Run')" data-wtype="Run" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Run</button>
+          <button onclick="setWorkoutType('Walk')" data-wtype="Walk" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Walk</button>
+          <button onclick="setWorkoutType('Strength')" data-wtype="Strength" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Strength</button>
+          <button onclick="setWorkoutType('Yoga')" data-wtype="Yoga" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Yoga</button>
+          <button onclick="setWorkoutType('Rest')" data-wtype="Rest" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Rest</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Distance (km)</label>
+            <input id="distanceInput" type="number" step="0.1" placeholder="0.0" onchange="saveMoveData()" class="w-full text-lg font-bold text-slate-900 bg-transparent focus:outline-none" />
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Duration (mins)</label>
+            <input id="durationInput" type="number" placeholder="0" onchange="saveMoveData()" class="w-full text-lg font-bold text-slate-900 bg-transparent focus:outline-none" />
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Effort / RPE (<span id="rpeVal">5</span>/10)</label>
+            <input id="rpeInput" type="range" min="1" max="10" value="5" oninput="document.getElementById('rpeVal').textContent=this.value" onchange="saveMoveData()" class="w-full accent-teal-700 mt-1.5" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. EMOTIONAL CHECK-IN & JOURNAL TAB -->
+    <section id="panel-checkin" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Emotional Check-in &amp; Reflection</h2>
+          <p class="text-xs text-slate-500">Separate mental mood from physical energy to spot patterns over time.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3">
+            <div class="flex justify-between text-xs font-bold text-slate-800 mb-1.5">
+              <span>Mental Mood</span>
+              <span id="moodScoreLabel" class="text-amber-700">4 / 5</span>
+            </div>
+            <input id="moodSlider" type="range" min="1" max="5" value="4" oninput="updateCheckinLabels()" onchange="saveCheckinData()" class="w-full accent-amber-600" />
+          </div>
+          <div class="bg-teal-50/60 border border-teal-200/80 rounded-xl p-3">
+            <div class="flex justify-between text-xs font-bold text-slate-800 mb-1.5">
+              <span>Physical Energy</span>
+              <span id="energyScoreLabel" class="text-teal-700">4 / 5</span>
+            </div>
+            <input id="energySlider" type="range" min="1" max="5" value="4" oninput="updateCheckinLabels()" onchange="saveCheckinData()" class="w-full accent-teal-700" />
+          </div>
+        </div>
+
+        <!-- Emotion Tags -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">How are you feeling right now?</label>
+          <div id="emotionTagsContainer" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Short Journal Box -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Daily Reflection / Wins / Friction</label>
+          <textarea id="journalNote" rows="3" placeholder="What went well today? Any energy dips, travel, or late work?" onchange="saveCheckinData()" class="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm focus:outline-none focus:border-teal-600"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. INSIGHTS & GOOGLE SHEETS SYNC TAB -->
+    <section id="panel-insights" class="tab-panel hidden space-y-4">
+      <!-- Live Google Sheets Connection Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Google Sheets Live Sync</h2>
+            <p class="text-xs text-slate-500">Connect your deployed Apps Script Web App URL so every tap saves directly to your Sheet.</p>
+          </div>
+          <button onclick="pullFromSheet()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition">
+            &#8635; Refresh
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input id="appsScriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="sm:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-teal-600" />
+          <input id="apiSecretInput" type="text" placeholder="HARISH_TRACKER_2026" class="rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-teal-600" />
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <span id="syncStatusMsg" class="text-xs text-slate-500">Not connected yet.</span>
+          <button onclick="saveSyncSettings()" class="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold transition shadow-sm">
+            Save &amp; Sync Now
+          </button>
+        </div>
+      </div>
+
+      <!-- Editable Targets Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-900 mb-2.5">Personal Daily Targets</h3>
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <label class="block text-[10px] font-bold uppercase text-slate-400">Water (ml)</label>
+            <input id="cfgWater" type="number" step="250" onchange="saveTargets()" class="w-full font-bold text-sm text-slate-900 bg-transparent focus:outline-none mt-0.5" />
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <label class="block text-[10px] font-bold uppercase text-slate-400">Protein (g)</label>
+            <input id="cfgProtein" type="number" step="5" onchange="saveTargets()" class="w-full font-bold text-sm text-slate-900 bg-transparent focus:outline-none mt-0.5" />
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <label class="block text-[10px] font-bold uppercase text-slate-400">Goal Weight (kg)</label>
+            <input id="cfgWeight" type="number" step="0.5" onchange="saveTargets()" class="w-full font-bold text-sm text-slate-900 bg-transparent focus:outline-none mt-0.5" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Daily_Logs Row Preview -->
+      <div class="bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-2 overflow-x-auto">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-teal-400 uppercase tracking-wider">Live Google Sheet Row Payload (Daily_Logs)</span>
+          <span class="text-[11px] text-slate-400">Auto-synced on edit</span>
+        </div>
+        <pre id="sheetPayloadPreview" class="text-[11px] text-slate-300 font-mono leading-relaxed"></pre>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- HABIT EDITOR MODAL -->
+  <div id="habitModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Customize Daily Habits</h3>
+        <button onclick="closeHabitModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+      </div>
+
+      <div id="modalHabitList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+
+      <div class="border-t border-slate-200 pt-3 space-y-2">
+        <div class="text-xs font-bold text-slate-700">Add New Habit</div>
+        <input id="newHabitTitle" type="text" placeholder="Habit title (e.g., 20 min Reading)" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs" />
+        <div class="grid grid-cols-2 gap-2">
+          <select id="newHabitCat" class="rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50">
+            <option value="Move">Move</option>
+            <option value="Fuel">Fuel</option>
+            <option value="Recover">Recover</option>
+            <option value="Hydrate">Hydrate</option>
+            <option value="Mind">Mind</option>
+          </select>
+          <input id="newHabitMin" type="text" placeholder="Min-viable rule (e.g., 5 pages)" class="rounded-xl border border-slate-200 px-3 py-2 text-xs" />
+        </div>
+        <button onclick="createHabit()" class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition">
+          + Add Habit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- DEFAULT STATE & STORAGE ---
+    const EMOTIONS = ['Focused', 'Calm', 'Energized', 'Grateful', 'Tired', 'Stressed', 'Sore', 'Distracted'];
+
+    const DEFAULT_HABITS = [
+      { habit_id: 'HAB_01', title: '10K Run / Strength', category: 'Move', min_viable_rule: '15 min home yoga', streak: 6, active: true },
+      { habit_id: 'HAB_02', title: 'Zero Refined Sugar', category: 'Fuel', min_viable_rule: 'Under 1 small bite', streak: 9, active: true },
+      { habit_id: 'HAB_03', title: '7.5+ Hrs Sleep', category: 'Recover', min_viable_rule: '6.5 hrs + 20m rest', streak: 4, active: true },
+      { habit_id: 'HAB_04', title: 'Morning Hydration 1L', category: 'Hydrate', min_viable_rule: '500 ml before coffee', streak: 11, active: true }
+    ];
+
+    let config = JSON.parse(localStorage.getItem('harish_tracker_cfg') || 'null') || {
+      scriptUrl: '',
+      apiSecret: 'HARISH_TRACKER_2026',
+      waterGoalMl: 3000,
+      proteinTargetG: 110,
+      targetWeightKg: 70.0
+    };
+
+    let habits = JSON.parse(localStorage.getItem('harish_tracker_habits') || 'null') || DEFAULT_HABITS;
+    let logsByDate = JSON.parse(localStorage.getItem('harish_tracker_logs') || '{}');
+    let foodByDate = JSON.parse(localStorage.getItem('harish_tracker_food') || '{}');
+
+    function todayISO() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+
+    let currentDate = todayISO();
+
+    function getDayLog(dateStr) {
+      if (!logsByDate[dateStr]) {
+        logsByDate[dateStr] = {
+          date: dateStr,
+          habits_json: {},
+          weight_kg: '',
+          body_fat_pct: '',
+          workout_type: 'Rest',
+          distance_km: 0,
+          duration_min: 0,
+          rpe: 5,
+          water_ml: 0,
+          water_goal_ml: config.waterGoalMl,
+          mood_score: 4,
+          energy_score: 4,
+          emotion_tags: ['Focused'],
+          journal_note: ''
+        };
+      }
+      return logsByDate[dateStr];
+    }
+
+    function persistLocal() {
+      localStorage.setItem('harish_tracker_cfg', JSON.stringify(config));
+      localStorage.setItem('harish_tracker_habits', JSON.stringify(habits));
+      localStorage.setItem('harish_tracker_logs', JSON.stringify(logsByDate));
+      localStorage.setItem('harish_tracker_food', JSON.stringify(foodByDate));
+    }
+
+    // --- TAB NAVIGATION ---
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('panel-' + tabName).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.className = 'tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+      });
+      const activeBtn = document.getElementById('tab-' + tabName);
+      activeBtn.className = 'tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm';
+    }
+
+    // --- DATE CONTROLS ---
+    function changeDate(delta) {
+      const d = new Date(currentDate + 'T00:00:00');
+      d.setDate(d.getDate() + delta);
+      currentDate = d.toISOString().slice(0, 10);
+      document.getElementById('datePicker').value = currentDate;
+      renderAll();
+      if (config.scriptUrl) pullFromSheet();
+    }
+
+    function onDatePick(val) {
+      if (!val) return;
+      currentDate = val;
+      renderAll();
+      if (config.scriptUrl) pullFromSheet();
+    }
+
+    // --- HABIT ACTIONS ---
+    function setHabitStatus(habitId, status) {
+      const log = getDayLog(currentDate);
+      if (log.habits_json[habitId] === status) {
+        delete log.habits_json[habitId];
+      } else {
+        log.habits_json[habitId] = status;
+      }
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function openHabitModal() {
+      const modal = document.getElementById('habitModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      renderModalHabits();
+    }
+
+    function closeHabitModal() {
+      const modal = document.getElementById('habitModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderModalHabits() {
+      const container = document.getElementById('modalHabitList');
+      container.innerHTML = habits.map((h, idx) => `
+        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <div class="font-bold text-slate-800">${h.title} <span class="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">${h.category}</span></div>
+            <div class="text-[11px] text-slate-500">Min-viable: ${h.min_viable_rule || 'None'}</div>
+          </div>
+          <button onclick="deleteHabit(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-2 py-1">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function createHabit() {
+      const title = document.getElementById('newHabitTitle').value.trim();
+      if (!title) return;
+      const category = document.getElementById('newHabitCat').value;
+      const minRule = document.getElementById('newHabitMin').value.trim() || '5 min starter';
+      habits.push({
+        habit_id: 'HAB_' + Math.floor(10 + Math.random() * 90),
+        title,
+        category,
+        min_viable_rule: minRule,
+        streak: 1,
+        active: true
+      });
+      document.getElementById('newHabitTitle').value = '';
+      document.getElementById('newHabitMin').value = '';
+      persistLocal();
+      renderModalHabits();
+      renderAll();
+      pushHabitsToSheet();
+    }
+
+    function deleteHabit(idx) {
+      habits.splice(idx, 1);
+      persistLocal();
+      renderModalHabits();
+      renderAll();
+      pushHabitsToSheet();
+    }
+
+    // --- FOOD ESTIMATOR & LOGGER ---
+    function estimateMacros(text) {
+      const t = text.toLowerCase();
+      let cal = 280, p = 10, c = 38, f = 9, fib = 4, sugar = false;
+
+      if (t.includes('dosa')) { cal += 180; c += 28; p += 4; f += 6; }
+      if (t.includes('idli')) { cal += 120; c += 24; p += 4; fib += 2; }
+      if (t.includes('sambar')) { cal += 90; p += 5; c += 12; fib += 4; }
+      if (t.includes('egg')) {
+        const count = (t.match(/(\d+)\s*(boiled\s*)?egg/) || [0, 2])[1];
+        cal += count * 75; p += count * 6; f += count * 5;
+      }
+      if (t.includes('chicken')) { cal += 240; p += 28; f += 11; }
+      if (t.includes('mutton')) { cal += 290; p += 25; f += 19; }
+      if (t.includes('paneer')) { cal += 220; p += 14; f += 16; }
+      if (t.includes('rice')) { cal += 210; c += 45; p += 4; }
+      if (t.includes('chapati') || t.includes('roti')) { cal += 180; c += 34; p += 6; fib += 4; }
+      if (t.includes('dal') || t.includes('paruppu') || t.includes('usili')) { cal += 140; p += 9; c += 18; fib += 5; }
+      if (t.includes('curd') || t.includes('raitha')) { cal += 70; p += 4; f += 3; }
+      if (t.includes('coffee') || t.includes('tea')) {
+        cal += t.includes('black') ? 10 : 45;
+        if (t.includes('sugar')) sugar = true;
+      }
+      if (t.includes('mysore pak') || t.includes('payasam') || t.includes('ice cream') || t.includes('sweet')) {
+        cal += 260; c += 32; f += 14; sugar = true;
+      }
+
+      let feedback = p >= 22
+        ? 'High-protein meal supporting muscle recovery and steady energy.'
+        : 'Moderate protein—consider adding eggs, dal, curd, or lean protein next meal.';
+      if (sugar) feedback += ' Refined sugar noted.';
+
+      return { calories: cal, protein_g: p, carbs_g: c, fat_g: f, fiber_g: fib, refined_sugar: sugar, ai_feedback: feedback };
+    }
+
+    function quickFillFood(str) {
+      document.getElementById('foodInput').value = str;
+      addFoodEntry();
+    }
+
+    function addFoodEntry() {
+      const input = document.getElementById('foodInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const slot = document.getElementById('mealSlot').value;
+      const macros = estimateMacros(text);
+
+      const entry = {
+        entry_id: 'FD_' + Date.now(),
+        date: currentDate,
+        meal_slot: slot,
+        food_text: text,
+        ...macros
+      };
+
+      if (!foodByDate[currentDate]) foodByDate[currentDate] = [];
+      foodByDate[currentDate].push(entry);
+      input.value = '';
+      persistLocal();
+      renderAll();
+      pushFoodToSheet(entry);
+    }
+
+    function removeFoodEntry(idx) {
+      if (!foodByDate[currentDate]) return;
+      foodByDate[currentDate].splice(idx, 1);
+      persistLocal();
+      renderAll();
+    }
+
+    // --- WATER & SMART SCALE ---
+    function adjustWater(deltaMl) {
+      const log = getDayLog(currentDate);
+      log.water_ml = Math.max(0, (Number(log.water_ml) || 0) + deltaMl);
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function editWaterGoal() {
+      const val = prompt('Set daily water goal in Liters (e.g., 3.0 or 3.5):', (config.waterGoalMl / 1000).toFixed(1));
+      if (!val || isNaN(val)) return;
+      config.waterGoalMl = Math.round(parseFloat(val) * 1000);
+      const log = getDayLog(currentDate);
+      log.water_goal_ml = config.waterGoalMl;
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function saveScaleData() {
+      const log = getDayLog(currentDate);
+      log.weight_kg = document.getElementById('weightInput').value;
+      log.body_fat_pct = document.getElementById('bodyFatInput').value;
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function editTargetWeight() {
+      const val = prompt('Set target weight (kg):', config.targetWeightKg);
+      if (!val || isNaN(val)) return;
+      config.targetWeightKg = parseFloat(val);
+      persistLocal();
+      renderAll();
+    }
+
+    // --- MOVEMENT ---
+    function setWorkoutType(type) {
+      const log = getDayLog(currentDate);
+      log.workout_type = type;
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function saveMoveData() {
+      const log = getDayLog(currentDate);
+      log.distance_km = parseFloat(document.getElementById('distanceInput').value || 0);
+      log.duration_min = parseInt(document.getElementById('durationInput').value || 0, 10);
+      log.rpe = parseInt(document.getElementById('rpeInput').value || 5, 10);
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    // --- EMOTIONAL CHECK-IN ---
+    function updateCheckinLabels() {
+      document.getElementById('moodScoreLabel').textContent = document.getElementById('moodSlider').value + ' / 5';
+      document.getElementById('energyScoreLabel').textContent = document.getElementById('energySlider').value + ' / 5';
+    }
+
+    function toggleEmotionTag(tag) {
+      const log = getDayLog(currentDate);
+      if (!Array.isArray(log.emotion_tags)) log.emotion_tags = [];
+      const i = log.emotion_tags.indexOf(tag);
+      if (i >= 0) log.emotion_tags.splice(i, 1);
+      else log.emotion_tags.push(tag);
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function saveCheckinData() {
+      const log = getDayLog(currentDate);
+      log.mood_score = parseInt(document.getElementById('moodSlider').value, 10);
+      log.energy_score = parseInt(document.getElementById('energySlider').value, 10);
+      log.journal_note = document.getElementById('journalNote').value;
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    // --- TARGETS & GOOGLE SHEETS API SYNC ---
+    function saveTargets() {
+      config.waterGoalMl = parseInt(document.getElementById('cfgWater').value || 3000, 10);
+      config.proteinTargetG = parseInt(document.getElementById('cfgProtein').value || 110, 10);
+      config.targetWeightKg = parseFloat(document.getElementById('cfgWeight').value || 70.0);
+      const log = getDayLog(currentDate);
+      log.water_goal_ml = config.waterGoalMl;
+      persistLocal();
+      renderAll();
+      pushDailyToSheet();
+    }
+
+    function setSyncBadge(state, text) {
+      const dot = document.getElementById('syncDot');
+      const label = document.getElementById('syncLabel');
+      label.textContent = text;
+      dot.className = 'w-2 h-2 rounded-full ' + (
+        state === 'ok' ? 'bg-emerald-500' :
+        state === 'syncing' ? 'bg-sky-500 animate-pulse' :
+        state === 'err' ? 'bg-rose-500' : 'bg-amber-400'
+      );
+    }
+
+    function saveSyncSettings() {
+      config.scriptUrl = document.getElementById('appsScriptUrl').value.trim();
+      config.apiSecret = document.getElementById('apiSecretInput').value.trim() || 'HARISH_TRACKER_2026';
+      persistLocal();
+      if (config.scriptUrl) {
+        pullFromSheet();
+      } else {
+        setSyncBadge('local', 'Local Mode (No URL)');
+      }
+    }
+
+    async function pullFromSheet() {
+      if (!config.scriptUrl) return;
+      setSyncBadge('syncing', 'Syncing with Google Sheet...');
+      try {
+        const url = `${config.scriptUrl}?action=init&date=${encodeURIComponent(currentDate)}&key=${encodeURIComponent(config.apiSecret)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'success') {
+          if (Array.isArray(data.habits) && data.habits.length) {
+            habits = data.habits.map(h => ({ ...h, streak: h.streak || 1 }));
+          }
+          if (data.dailyLog) {
+            const dl = data.dailyLog;
+            let parsedHabits = {};
+            try { parsedHabits = typeof dl.habits_json === 'string' ? JSON.parse(dl.habits_json) : (dl.habits_json || {}); } catch(e) {}
+            logsByDate[currentDate] = {
+              ...getDayLog(currentDate),
+              ...dl,
+              habits_json: parsedHabits,
+              emotion_tags: typeof dl.emotion_tags === 'string' && dl.emotion_tags ? dl.emotion_tags.split(',').map(s => s.trim()) : []
+            };
+          }
+          if (Array.isArray(data.foodEntries)) {
+            foodByDate[currentDate] = data.foodEntries;
+          }
+          persistLocal();
+          renderAll();
+          setSyncBadge('ok', 'Synced with Harish_Personal_Habit_Health_DB');
+          document.getElementById('syncStatusMsg').textContent = 'Connected & synced at ' + new Date().toLocaleTimeString();
+        } else {
+          setSyncBadge('err', 'Auth Error: Check API Key');
+          document.getElementById('syncStatusMsg').textContent = data.message || 'Sync error';
+        }
+      } catch (err) {
+        setSyncBadge('err', 'Offline / CORS Check Needed');
+        document.getElementById('syncStatusMsg').textContent = 'Could not reach Apps Script URL.';
+      }
+    }
+
+    async function postToAppsScript(payloadObj) {
+      if (!config.scriptUrl) return;
+      setSyncBadge('syncing', 'Saving to Google Sheet...');
+      try {
+        const res = await fetch(config.scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ key: config.apiSecret, ...payloadObj })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          setSyncBadge('ok', 'Saved to Google Sheet');
+        } else {
+          setSyncBadge('err', 'Save failed: ' + (data.message || 'Error'));
+        }
+      } catch (e) {
+        setSyncBadge('err', 'Saved locally (Sheet unreachable)');
+      }
+    }
+
+    function pushDailyToSheet() {
+      const log = getDayLog(currentDate);
+      postToAppsScript({
+        action: 'upsertDaily',
+        data: { ...log, water_goal_ml: config.waterGoalMl }
+      });
+    }
+
+    function pushFoodToSheet(entry) {
+      postToAppsScript({ action: 'addFood', data: entry });
+    }
+
+    function pushHabitsToSheet() {
+      postToAppsScript({ action: 'syncHabits', data: { habits } });
+    }
+
+    // --- MASTER RENDER ---
+    function renderAll() {
+      const log = getDayLog(currentDate);
+      const foods = foodByDate[currentDate] || [];
+
+      // Habits
+      let doneCount = 0;
+      const habitsHtml = habits.map(h => {
+        const st = log.habits_json[h.habit_id] || 'pending';
+        if (st === 'done' || st === 'min') doneCount++;
+        const isDone = st === 'done';
+        const isMin = st === 'min';
+        return `
+          <div class="bg-white rounded-2xl border ${isDone ? 'border-teal-300 bg-teal-50/30' : isMin ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'} p-3.5 flex items-center justify-between gap-3 shadow-2xs transition">
+            <div onclick="setHabitStatus('${h.habit_id}', 'done')" class="flex items-center gap-3 cursor-pointer flex-1">
+              <div class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs border ${isDone ? 'bg-teal-700 border-teal-700 text-white' : isMin ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300 bg-white text-transparent'}">
+                ${isMin ? 'M' : '&#10003;'}
+              </div>
+              <div>
+                <div class="text-sm font-bold ${isDone ? 'text-teal-950' : 'text-slate-800'}">${h.title}</div>
+                <div class="text-[11px] text-slate-500">${h.category} &bull; Min rule: <span class="font-medium">${h.min_viable_rule}</span></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-1 rounded-lg bg-orange-50 text-orange-700">&#128293; ${h.streak + (isDone || isMin ? 1 : 0)}d</span>
+              <button onclick="setHabitStatus('${h.habit_id}', 'min')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${isMin ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
+                Min
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('habitsList').innerHTML = habitsHtml;
+
+      // Food
+      let totCal = 0, totPro = 0, totCarb = 0, totFib = 0;
+      foods.forEach(f => {
+        totCal += Number(f.calories || 0);
+        totPro += Number(f.protein_g || 0);
+        totCarb += Number(f.carbs_g || 0);
+        totFib += Number(f.fiber_g || 0);
+      });
+      document.getElementById('macroSummaryBadge').textContent = `${totCal} kcal • ${totPro}g / ${config.proteinTargetG}g P`;
+
+      document.getElementById('foodEntriesList').innerHTML = foods.length ? foods.map((f, i) => `
+        <div class="bg-white rounded-xl border border-slate-200 p-3 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <span class="font-bold text-teal-800 uppercase text-[10px] mr-1.5">${f.meal_slot}</span>
+            <span class="font-semibold text-slate-800">${f.food_text}</span>
+            <div class="text-[11px] text-slate-500 mt-0.5">${f.calories} kcal &bull; <strong>${f.protein_g}g P</strong> &bull; ${f.carbs_g}g C &bull; ${f.fiber_g}g Fiber</div>
+          </div>
+          <button onclick="removeFoodEntry(${i})" class="text-slate-400 hover:text-rose-600 px-2 font-bold">&times;</button>
+        </div>
+      `).join('') : '<div class="text-center text-xs text-slate-400 py-4">No meals logged for this date yet.</div>';
+
+      if (foods.length) {
+        const remPro = Math.max(0, config.proteinTargetG - totPro);
+        document.getElementById('nutritionAiText').textContent = remPro > 0
+          ? `You are at ${totPro}g protein (${remPro}g remaining to hit your ${config.proteinTargetG}g target) and ${totFib}g fiber across ${foods.length} meal(s).`
+          : `Protein target hit (${totPro}g / ${config.proteinTargetG}g)! Total intake: ${totCal} kcal and ${totFib}g fiber.`;
+      }
+
+      // Water Bottle
+      const goalMl = Number(log.water_goal_ml || config.waterGoalMl || 3000);
+      const curMl = Number(log.water_ml || 0);
+      const pct = Math.min(100, Math.round((curMl / goalMl) * 100));
+      document.getElementById('waterGoalLabel').textContent = (goalMl / 1000).toFixed(1) + ' L';
+      document.getElementById('waterPctBadge').textContent = pct + '%';
+      document.getElementById('waterLiquid').style.height = pct + '%';
+      document.getElementById('waterCurrentLiters').textContent = (curMl / 1000).toFixed(2) + ' L';
+      const remMl = Math.max(0, goalMl - curMl);
+      document.getElementById('waterRemainingText').textContent = remMl === 0 ? 'Goal Reached!' : (remMl / 1000).toFixed(2) + ' L left';
+
+      // Smart Scale
+      document.getElementById('weightInput').value = log.weight_kg || '';
+      document.getElementById('bodyFatInput').value = log.body_fat_pct || '';
+      document.getElementById('targetWeightLabel').innerHTML = `Goal: ${Number(config.targetWeightKg).toFixed(1)} kg &#9998;`;
+
+      const recentDates = Object.keys(logsByDate).sort().slice(-7);
+      const weights = recentDates.map(d => ({ d: d.slice(5), w: parseFloat(logsByDate[d].weight_kg) })).filter(x => !isNaN(x.w));
+      if (weights.length) {
+        const latest = weights[weights.length - 1].w;
+        const diff = (latest - config.targetWeightKg).toFixed(1);
+        document.getElementById('weightDeltaBadge').textContent = (diff > 0 ? `+${diff}` : diff) + ' kg vs Goal';
+        const minW = Math.min(...weights.map(x => x.w)) - 1;
+        const maxW = Math.max(...weights.map(x => x.w)) + 1;
+        document.getElementById('weightSparkline').innerHTML = weights.map(item => {
+          const hPct = Math.max(20, Math.round(((item.w - minW) / (maxW - minW || 1)) * 100));
+          return `
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-[10px] font-bold text-slate-700">${item.w}</span>
+              <div class="w-full max-w-[26px] bg-teal-600 rounded-t-md" style="height:${hPct * 0.45}px"></div>
+              <span class="text-[9px] text-slate-400">${item.d}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        document.getElementById('weightDeltaBadge').textContent = 'Log Today';
+        document.getElementById('weightSparkline').innerHTML = '<div class="text-xs text-slate-400 w-full text-center py-4">Enter today's scale weight above to start your trend line.</div>';
+      }
+
+      // Movement
+      document.getElementById('moveBadge').textContent = log.workout_type + (log.distance_km ? ` • ${log.distance_km} km` : '');
+      document.querySelectorAll('.wtype-btn').forEach(btn => {
+        const active = btn.dataset.wtype === log.workout_type;
+        btn.className = 'wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition ' +
+          (active ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100');
+      });
+      document.getElementById('distanceInput').value = log.distance_km || '';
+      document.getElementById('durationInput').value = log.duration_min || '';
+      document.getElementById('rpeInput').value = log.rpe || 5;
+      document.getElementById('rpeVal').textContent = log.rpe || 5;
+
+      // Check-in
+      document.getElementById('moodSlider').value = log.mood_score || 4;
+      document.getElementById('energySlider').value = log.energy_score || 4;
+      updateCheckinLabels();
+      document.getElementById('journalNote').value = log.journal_note || '';
+      const activeTags = Array.isArray(log.emotion_tags) ? log.emotion_tags : [];
+      document.getElementById('emotionTagsContainer').innerHTML = EMOTIONS.map(tag => {
+        const sel = activeTags.includes(tag);
+        return `<button onclick="toggleEmotionTag('${tag}')" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition ${sel ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}">${tag}</button>`;
+      }).join('');
+
+      // Top KPI Strip
+      document.getElementById('kpiHabits').textContent = `${doneCount}/${habits.length}`;
+      document.getElementById('kpiProtein').textContent = `${totPro}g`;
+      document.getElementById('kpiWater').textContent = `${(curMl / 1000).toFixed(1)}L`;
+      document.getElementById('kpiWeight').textContent = log.weight_kg ? `${log.weight_kg}kg` : '--';
+      document.getElementById('kpiMood').textContent = `${log.mood_score || 4}/5`;
+
+      // Insights & Settings
+      document.getElementById('appsScriptUrl').value = config.scriptUrl || '';
+      document.getElementById('apiSecretInput').value = config.apiSecret || 'HARISH_TRACKER_2026';
+      document.getElementById('cfgWater').value = config.waterGoalMl;
+      document.getElementById('cfgProtein').value = config.proteinTargetG;
+      document.getElementById('cfgWeight').value = config.targetWeightKg;
+      document.getElementById('sheetPayloadPreview').textContent = JSON.stringify({
+        date: currentDate,
+        habits_json: log.habits_json,
+        weight_kg: log.weight_kg || null,
+        workout_type: log.workout_type,
+        distance_km: log.distance_km,
+        water_ml: curMl,
+        water_goal_ml: goalMl,
+        mood_score: log.mood_score,
+        energy_score: log.energy_score
+      }, null, 2);
+    }
+
+    // Boot
+    document.getElementById('datePicker').value = currentDate;
+    if (config.scriptUrl) {
+      setSyncBadge('ok', 'Connected to Google Sheet');
+      pullFromSheet();
+    }
+    renderAll();
+  </script>
+</body>
+</html>
