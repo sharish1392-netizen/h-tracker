@@ -93,23 +93,23 @@
     </div>
 
     <!-- Zero-Scroll Category Tabs -->
-    <nav class="max-w-4xl mx-auto px-4 flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
-      <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm">
+    <nav class="max-w-4xl mx-auto px-4 grid grid-cols-3 sm:grid-cols-6 gap-1.5 pb-2.5">
+      <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm">
         Habits
       </button>
-      <button onclick="switchTab('food')" id="tab-food" class="tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+      <button onclick="switchTab('food')" id="tab-food" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Food
       </button>
-      <button onclick="switchTab('body')" id="tab-body" class="tab-btn flex-1 min-w-[115px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+      <button onclick="switchTab('body')" id="tab-body" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Water &amp; Scale
       </button>
-      <button onclick="switchTab('move')" id="tab-move" class="tab-btn flex-1 min-w-[85px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+      <button onclick="switchTab('move')" id="tab-move" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Move
       </button>
-      <button onclick="switchTab('checkin')" id="tab-checkin" class="tab-btn flex-1 min-w-[88px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+      <button onclick="switchTab('checkin')" id="tab-checkin" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Check-in
       </button>
-      <button onclick="switchTab('insights')" id="tab-insights" class="tab-btn flex-1 min-w-[92px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+      <button onclick="switchTab('insights')" id="tab-insights" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Insights
       </button>
     </nav>
@@ -490,10 +490,10 @@
       document.getElementById('panel-' + tabName).classList.remove('hidden');
 
       document.querySelectorAll('.tab-btn').forEach(b => {
-        b.className = 'tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+        b.className = 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
       });
       const activeBtn = document.getElementById('tab-' + tabName);
-      activeBtn.className = 'tab-btn flex-1 min-w-[78px] py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm';
+      activeBtn.className = 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm';
     }
 
     // --- DATE CONTROLS ---
@@ -941,7 +941,7 @@
         }).join('');
       } else {
         document.getElementById('weightDeltaBadge').textContent = 'Log Today';
-        document.getElementById('weightSparkline').innerHTML = '<div class="text-xs text-slate-400 w-full text-center py-4">Enter today's scale weight above to start your trend line.</div>';
+        document.getElementById('weightSparkline').innerHTML = '<div class="text-xs text-slate-400 w-full text-center py-4">Enter today&#39;s scale weight above to start your trend line.</div>';
       }
 
       // Movement
