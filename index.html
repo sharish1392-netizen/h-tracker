@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0f766e" />
   <title>Harish — Personal Habit & Health Tracker</title>
   <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -21,22 +20,22 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* Animated Rising Water Bottle */
-    .water-fill {
-      transition: height 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-    }
+    .water-fill { transition: height 0.65s cubic-bezier(0.22, 1, 0.36, 1); }
     .wave {
-      position: absolute;
-      top: -10px;
-      left: 0;
-      width: 200%;
-      height: 16px;
-      background: rgba(255, 255, 255, 0.35);
-      border-radius: 40%;
+      position: absolute; top: -10px; left: 0; width: 200%; height: 16px;
+      background: rgba(255, 255, 255, 0.35); border-radius: 40%;
       animation: waveMove 4s linear infinite;
     }
     @keyframes waveMove {
       0% { transform: translateX(0); }
       100% { transform: translateX(-50%); }
+    }
+    /* Sticky left column for Habit Matrix */
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      background: inherit;
     }
   </style>
 </head>
@@ -44,7 +43,7 @@
 
   <!-- TOP HEADER BAR -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
           HS
@@ -67,10 +66,10 @@
     </div>
 
     <!-- Compact Live KPI Strip -->
-    <div class="max-w-4xl mx-auto px-4 pb-2.5">
+    <div class="max-w-5xl mx-auto px-4 pb-2.5">
       <div class="grid grid-cols-5 gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-2 text-center">
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Habits</div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Today</div>
           <div id="kpiHabits" class="text-xs sm:text-sm font-bold text-teal-700">0/4</div>
         </div>
         <div>
@@ -83,19 +82,19 @@
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Scale</div>
-          <div id="kpiWeight" class="text-xs sm:text-sm font-bold text-slate-800">-- kg</div>
+          <div id="kpiWeight" class="text-xs sm:text-sm font-bold text-slate-800">--</div>
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Mood</div>
-          <div id="kpiMood" class="text-xs sm:text-sm font-bold text-amber-600">3/5</div>
+          <div id="kpiMood" class="text-xs sm:text-sm font-bold text-amber-600">4/5</div>
         </div>
       </div>
     </div>
 
     <!-- Zero-Scroll Category Tabs -->
-    <nav class="max-w-4xl mx-auto px-4 grid grid-cols-3 sm:grid-cols-6 gap-1.5 pb-2.5">
+    <nav class="max-w-5xl mx-auto px-4 grid grid-cols-3 sm:grid-cols-6 gap-1.5 pb-2.5">
       <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm">
-        Habits
+        Habits &amp; Streaks
       </button>
       <button onclick="switchTab('food')" id="tab-food" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
         Food
@@ -116,21 +115,40 @@
   </header>
 
   <!-- MAIN CONTENT AREA -->
-  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-4">
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4">
 
-    <!-- 1. HABITS TAB -->
-    <section id="panel-habits" class="tab-panel space-y-3">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-base font-bold text-slate-900">Daily Habits &amp; Streak Engine</h2>
-          <p class="text-xs text-slate-500">Tap to complete, or use <span class="font-semibold text-amber-700">Min</span> on busy days to protect your streak.</p>
+    <!-- 1. HABITS & STREAKS MATRIX TAB -->
+    <section id="panel-habits" class="tab-panel space-y-4">
+
+      <!-- Streak Summary Cards -->
+      <div id="streakDashboardCards" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+
+      <!-- Habit x Dates Grid Matrix -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">Habit &times; Date Check-off Grid</h2>
+            <p class="text-[11px] text-slate-500">Tap any date cell to cycle: <span class="font-bold text-teal-700">&#10003; Done</span> &rarr; <span class="font-bold text-amber-600">M Min-Viable</span> &rarr; <span class="text-slate-400">Empty</span>. Backfill past days anytime!</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <select id="matrixRangeSelect" onchange="renderAll()" class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none">
+              <option value="nov_mtd" selected>Nov 1 – Today (MTD)</option>
+              <option value="last_7">Last 7 Days</option>
+              <option value="last_14">Last 14 Days</option>
+            </select>
+            <button onclick="openHabitModal()" class="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-xl text-xs font-semibold hover:bg-teal-100 transition">
+              + Habits
+            </button>
+          </div>
         </div>
-        <button onclick="openHabitModal()" class="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-xl text-xs font-semibold hover:bg-teal-100 transition">
-          + Edit / Add
-        </button>
-      </div>
 
-      <div id="habitsList" class="space-y-2.5"></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead id="habitMatrixHead" class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600"></thead>
+            <tbody id="habitMatrixBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- 2. FOOD JOURNAL TAB -->
@@ -154,7 +172,6 @@
           </button>
         </div>
 
-        <!-- Quick Presets -->
         <div class="flex flex-wrap gap-1.5 pt-1">
           <button onclick="quickFillFood('2 dosa, sambar, 2 boiled eggs, black coffee')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition">+ Dosa &amp; Eggs</button>
           <button onclick="quickFillFood('Rice, sambar, paruppu usili, chicken curry, curd')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition">+ South Indian Lunch</button>
@@ -162,7 +179,6 @@
         </div>
       </div>
 
-      <!-- AI Nutrition Feedback Banner -->
       <div id="nutritionAiBox" class="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-3.5 text-xs text-emerald-950 flex items-start gap-2.5">
         <span class="text-base">&#10024;</span>
         <div>
@@ -177,8 +193,6 @@
     <!-- 3. WATER BOTTLE & SMART SCALE TAB -->
     <section id="panel-body" class="tab-panel hidden">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <!-- Visual Rising Water Bottle Card -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between mb-3">
             <div>
@@ -192,32 +206,23 @@
           </div>
 
           <div class="flex items-center justify-center gap-6 my-2">
-            <!-- SVG / CSS Interactive Bottle -->
             <div class="relative flex flex-col items-center">
-              <!-- Bottle Cap -->
               <div class="w-10 h-3.5 bg-sky-700 rounded-t-md"></div>
               <div class="w-12 h-2 bg-sky-200 rounded-sm"></div>
-              <!-- Bottle Body -->
               <div class="relative w-28 h-52 rounded-3xl border-4 border-sky-600 bg-sky-50/50 overflow-hidden shadow-inner flex items-center justify-center">
-                <!-- Measurement Ticks -->
                 <div class="absolute inset-x-0 top-1/4 border-t border-dashed border-sky-300/80 z-10"></div>
                 <div class="absolute inset-x-0 top-2/4 border-t border-dashed border-sky-300/80 z-10"></div>
                 <div class="absolute inset-x-0 top-3/4 border-t border-dashed border-sky-300/80 z-10"></div>
-
-                <!-- Rising Liquid -->
                 <div id="waterLiquid" class="water-fill absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-600 to-sky-400" style="height: 0%;">
                   <div class="wave"></div>
                 </div>
-
-                <!-- Center Readout -->
-                <div class="relative z-20 text-center bg-white/85 backdrop-blur-xs px-2.5 py-1 rounded-xl shadow-xs">
+                <div class="relative z-20 text-center bg-white/85 px-2.5 py-1 rounded-xl shadow-xs">
                   <div id="waterCurrentLiters" class="text-base font-extrabold text-slate-900">0.00 L</div>
                   <div id="waterRemainingText" class="text-[10px] font-semibold text-slate-500">3.00 L left</div>
                 </div>
               </div>
             </div>
 
-            <!-- Quick Add Controls -->
             <div class="flex flex-col gap-2 w-32">
               <button onclick="adjustWater(250)" class="py-2.5 px-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold text-xs transition">+ 250 ml (Glass)</button>
               <button onclick="adjustWater(500)" class="py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition">+ 500 ml (Bottle)</button>
@@ -227,7 +232,6 @@
           </div>
         </div>
 
-        <!-- Smart Scale & Body Weight Card -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -248,7 +252,6 @@
             </div>
           </div>
 
-          <!-- 7-Day Weight Trend Bars -->
           <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
             <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
               <span>Recent Scale Trend</span>
@@ -257,7 +260,6 @@
             <div id="weightSparkline" class="flex items-end justify-between gap-2 h-20 pt-2"></div>
           </div>
         </div>
-
       </div>
     </section>
 
@@ -267,12 +269,11 @@
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-base font-bold text-slate-900">Movement &amp; 10K Prep Log</h2>
-            <p class="text-xs text-slate-500">Select today's primary session to track mileage &amp; effort.</p>
+            <p class="text-xs text-slate-500">Select today&#39;s primary session to track mileage &amp; effort.</p>
           </div>
           <span id="moveBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800">Rest Day</span>
         </div>
 
-        <!-- Activity Type Pills -->
         <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="workoutTypeGrid">
           <button onclick="setWorkoutType('Run')" data-wtype="Run" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Run</button>
           <button onclick="setWorkoutType('Walk')" data-wtype="Walk" class="wtype-btn py-2.5 px-3 rounded-xl border text-xs font-bold transition">Walk</button>
@@ -323,13 +324,11 @@
           </div>
         </div>
 
-        <!-- Emotion Tags -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1.5">How are you feeling right now?</label>
           <div id="emotionTagsContainer" class="flex flex-wrap gap-1.5"></div>
         </div>
 
-        <!-- Short Journal Box -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1.5">Daily Reflection / Wins / Friction</label>
           <textarea id="journalNote" rows="3" placeholder="What went well today? Any energy dips, travel, or late work?" onchange="saveCheckinData()" class="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm focus:outline-none focus:border-teal-600"></textarea>
@@ -339,12 +338,11 @@
 
     <!-- 6. INSIGHTS & GOOGLE SHEETS SYNC TAB -->
     <section id="panel-insights" class="tab-panel hidden space-y-4">
-      <!-- Live Google Sheets Connection Card -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-base font-bold text-slate-900">Google Sheets Live Sync</h2>
-            <p class="text-xs text-slate-500">Connect your deployed Apps Script Web App URL so every tap saves directly to your Sheet.</p>
+            <p class="text-xs text-slate-500">Uses POST text/plain transport to avoid Google multi-account redirect blocks.</p>
           </div>
           <button onclick="pullFromSheet()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition">
             &#8635; Refresh
@@ -364,7 +362,6 @@
         </div>
       </div>
 
-      <!-- Editable Targets Card -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
         <h3 class="text-sm font-bold text-slate-900 mb-2.5">Personal Daily Targets</h3>
         <div class="grid grid-cols-3 gap-2.5">
@@ -383,7 +380,6 @@
         </div>
       </div>
 
-      <!-- Live Daily_Logs Row Preview -->
       <div class="bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-2 overflow-x-auto">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-teal-400 uppercase tracking-wider">Live Google Sheet Row Payload (Daily_Logs)</span>
@@ -396,7 +392,7 @@
   </main>
 
   <!-- HABIT EDITOR MODAL -->
-  <div id="habitModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+  <div id="habitModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-900">Customize Daily Habits</h3>
@@ -426,15 +422,22 @@
   </div>
 
   <script>
-    // --- DEFAULT STATE & STORAGE ---
     const EMOTIONS = ['Focused', 'Calm', 'Energized', 'Grateful', 'Tired', 'Stressed', 'Sore', 'Distracted'];
 
     const DEFAULT_HABITS = [
-      { habit_id: 'HAB_01', title: '10K Run / Strength', category: 'Move', min_viable_rule: '15 min home yoga', streak: 6, active: true },
-      { habit_id: 'HAB_02', title: 'Zero Refined Sugar', category: 'Fuel', min_viable_rule: 'Under 1 small bite', streak: 9, active: true },
-      { habit_id: 'HAB_03', title: '7.5+ Hrs Sleep', category: 'Recover', min_viable_rule: '6.5 hrs + 20m rest', streak: 4, active: true },
-      { habit_id: 'HAB_04', title: 'Morning Hydration 1L', category: 'Hydrate', min_viable_rule: '500 ml before coffee', streak: 11, active: true }
+      { habit_id: 'HAB_02', title: 'Zero Refined Sugar', category: 'Fuel', min_viable_rule: 'Under 1 small bite', active: true },
+      { habit_id: 'HAB_01', title: '10K Run / Strength', category: 'Move', min_viable_rule: '15 min home yoga', active: true },
+      { habit_id: 'HAB_03', title: '7.5+ Hrs Sleep', category: 'Recover', min_viable_rule: '6.5 hrs + 20m rest', active: true },
+      { habit_id: 'HAB_04', title: 'Morning Hydration 1L', category: 'Hydrate', min_viable_rule: '500 ml before coffee', active: true }
     ];
+
+    function todayISO() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+    }
+
+    let currentDate = todayISO();
 
     let config = JSON.parse(localStorage.getItem('harish_tracker_cfg') || 'null') || {
       scriptUrl: '',
@@ -445,15 +448,19 @@
     };
 
     let habits = JSON.parse(localStorage.getItem('harish_tracker_habits') || 'null') || DEFAULT_HABITS;
-    let logsByDate = JSON.parse(localStorage.getItem('harish_tracker_logs') || '{}');
+    let logsByDate = JSON.parse(localStorage.getItem('harish_tracker_logs') || 'null');
     let foodByDate = JSON.parse(localStorage.getItem('harish_tracker_food') || '{}');
 
-    function todayISO() {
-      const d = new Date();
-      return d.toISOString().slice(0, 10);
+    // Seed Harish's Nov 9 - Nov 13 No Sugar history on first load if empty
+    if (!logsByDate) {
+      logsByDate = {
+        '2026-11-09': { date: '2026-11-09', habits_json: { HAB_02: 'done' }, water_ml: 3000, water_goal_ml: 3000, mood_score: 4, energy_score: 4 },
+        '2026-11-10': { date: '2026-11-10', habits_json: { HAB_02: 'done' }, water_ml: 3000, water_goal_ml: 3000, mood_score: 4, energy_score: 4 },
+        '2026-11-11': { date: '2026-11-11', habits_json: { HAB_02: 'done' }, water_ml: 2750, water_goal_ml: 3000, mood_score: 4, energy_score: 4 },
+        '2026-11-12': { date: '2026-11-12', habits_json: { HAB_02: 'done' }, water_ml: 3000, water_goal_ml: 3000, mood_score: 5, energy_score: 4 },
+        '2026-11-13': { date: '2026-11-13', habits_json: {}, water_ml: 2500, water_goal_ml: 3000, mood_score: 3, energy_score: 3 }
+      };
     }
-
-    let currentDate = todayISO();
 
     function getDayLog(dateStr) {
       if (!logsByDate[dateStr]) {
@@ -474,6 +481,7 @@
           journal_note: ''
         };
       }
+      if (!logsByDate[dateStr].habits_json) logsByDate[dateStr].habits_json = {};
       return logsByDate[dateStr];
     }
 
@@ -482,6 +490,92 @@
       localStorage.setItem('harish_tracker_habits', JSON.stringify(habits));
       localStorage.setItem('harish_tracker_logs', JSON.stringify(logsByDate));
       localStorage.setItem('harish_tracker_food', JSON.stringify(foodByDate));
+    }
+
+    // --- REAL STREAK ENGINE (CALCULATES FROM ACTUAL LOGGED DATES) ---
+    function computeHabitStats(habitId) {
+      const today = todayISO();
+      // Collect all dates from Nov 1, 2026 up to today (plus any earlier logged dates)
+      const allDatesSet = new Set(Object.keys(logsByDate));
+      const start = new Date('2026-11-01T00:00:00');
+      const end = new Date(today + 'T00:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        allDatesSet.add(d.toISOString().slice(0, 10));
+      }
+      const sortedDates = Array.from(allDatesSet).filter(d => d <= today).sort();
+
+      // Current streak: count backwards from today (if today isn't logged yet, start from yesterday)
+      let currentStreak = 0;
+      let idx = sortedDates.length - 1;
+      if (idx >= 0) {
+        const todaySt = (logsByDate[sortedDates[idx]]?.habits_json || {})[habitId];
+        if (todaySt !== 'done' && todaySt !== 'min') {
+          idx--; // Today still open; check streak ending yesterday
+        }
+        while (idx >= 0) {
+          const st = (logsByDate[sortedDates[idx]]?.habits_json || {})[habitId];
+          if (st === 'done' || st === 'min') {
+            currentStreak++;
+            idx--;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Best streak & total days completed in November
+      let bestStreak = 0;
+      let running = 0;
+      let novCompleted = 0;
+      sortedDates.forEach(d => {
+        const st = (logsByDate[d]?.habits_json || {})[habitId];
+        const ok = (st === 'done' || st === 'min');
+        if (ok) {
+          running++;
+          if (running > bestStreak) bestStreak = running;
+          if (d.startsWith('2026-11')) novCompleted++;
+        } else {
+          running = 0;
+        }
+      });
+
+      return { currentStreak, bestStreak, novCompleted };
+    }
+
+    function getMatrixDates() {
+      const mode = document.getElementById('matrixRangeSelect')?.value || 'nov_mtd';
+      const today = todayISO();
+      const end = new Date(today + 'T00:00:00');
+      let start;
+      if (mode === 'last_7') {
+        start = new Date(end);
+        start.setDate(end.getDate() - 6);
+      } else if (mode === 'last_14') {
+        start = new Date(end);
+        start.setDate(end.getDate() - 13);
+      } else {
+        start = new Date('2026-11-01T00:00:00');
+      }
+      const list = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        list.push(d.toISOString().slice(0, 10));
+      }
+      return list;
+    }
+
+    function cycleMatrixCell(habitId, dateStr) {
+      const log = getDayLog(dateStr);
+      const cur = log.habits_json[habitId] || 'pending';
+      if (cur === 'pending') {
+        log.habits_json[habitId] = 'done';
+      } else if (cur === 'done') {
+        log.habits_json[habitId] = 'min';
+      } else {
+        delete log.habits_json[habitId];
+      }
+      persistLocal();
+      renderAll();
+      pushSpecificDateToSheet(dateStr);
     }
 
     // --- TAB NAVIGATION ---
@@ -513,19 +607,7 @@
       if (config.scriptUrl) pullFromSheet();
     }
 
-    // --- HABIT ACTIONS ---
-    function setHabitStatus(habitId, status) {
-      const log = getDayLog(currentDate);
-      if (log.habits_json[habitId] === status) {
-        delete log.habits_json[habitId];
-      } else {
-        log.habits_json[habitId] = status;
-      }
-      persistLocal();
-      renderAll();
-      pushDailyToSheet();
-    }
-
+    // --- HABIT MODAL ---
     function openHabitModal() {
       const modal = document.getElementById('habitModal');
       modal.classList.remove('hidden');
@@ -562,7 +644,6 @@
         title,
         category,
         min_viable_rule: minRule,
-        streak: 1,
         active: true
       });
       document.getElementById('newHabitTitle').value = '';
@@ -657,7 +738,7 @@
       log.water_ml = Math.max(0, (Number(log.water_ml) || 0) + deltaMl);
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function editWaterGoal() {
@@ -668,7 +749,7 @@
       log.water_goal_ml = config.waterGoalMl;
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function saveScaleData() {
@@ -677,7 +758,7 @@
       log.body_fat_pct = document.getElementById('bodyFatInput').value;
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function editTargetWeight() {
@@ -694,7 +775,7 @@
       log.workout_type = type;
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function saveMoveData() {
@@ -704,7 +785,7 @@
       log.rpe = parseInt(document.getElementById('rpeInput').value || 5, 10);
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     // --- EMOTIONAL CHECK-IN ---
@@ -721,7 +802,7 @@
       else log.emotion_tags.push(tag);
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function saveCheckinData() {
@@ -731,10 +812,10 @@
       log.journal_note = document.getElementById('journalNote').value;
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
-    // --- TARGETS & GOOGLE SHEETS API SYNC ---
+    // --- TARGETS & GOOGLE SHEETS API SYNC (ALL POST text/plain TO PREVENT CORS REDIRECTS) ---
     function saveTargets() {
       config.waterGoalMl = parseInt(document.getElementById('cfgWater').value || 3000, 10);
       config.proteinTargetG = parseInt(document.getElementById('cfgProtein').value || 110, 10);
@@ -743,7 +824,7 @@
       log.water_goal_ml = config.waterGoalMl;
       persistLocal();
       renderAll();
-      pushDailyToSheet();
+      pushSpecificDateToSheet(currentDate);
     }
 
     function setSyncBadge(state, text) {
@@ -772,23 +853,30 @@
       if (!config.scriptUrl) return;
       setSyncBadge('syncing', 'Syncing with Google Sheet...');
       try {
-        const url = `${config.scriptUrl}?action=init&date=${encodeURIComponent(currentDate)}&key=${encodeURIComponent(config.apiSecret)}`;
-        const res = await fetch(url);
+        // Use POST text/plain so Google multi-account sessions never trigger CORS preflight/redirect errors
+        const res = await fetch(config.scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ key: config.apiSecret, action: 'init', date: currentDate })
+        });
         const data = await res.json();
         if (data.status === 'success') {
           if (Array.isArray(data.habits) && data.habits.length) {
-            habits = data.habits.map(h => ({ ...h, streak: h.streak || 1 }));
+            habits = data.habits;
           }
-          if (data.dailyLog) {
-            const dl = data.dailyLog;
-            let parsedHabits = {};
-            try { parsedHabits = typeof dl.habits_json === 'string' ? JSON.parse(dl.habits_json) : (dl.habits_json || {}); } catch(e) {}
-            logsByDate[currentDate] = {
-              ...getDayLog(currentDate),
-              ...dl,
-              habits_json: parsedHabits,
-              emotion_tags: typeof dl.emotion_tags === 'string' && dl.emotion_tags ? dl.emotion_tags.split(',').map(s => s.trim()) : []
-            };
+          if (Array.isArray(data.history)) {
+            data.history.forEach(row => {
+              const dKey = String(row.date).slice(0, 10);
+              let parsedHabits = {};
+              try { parsedHabits = typeof row.habits_json === 'string' ? JSON.parse(row.habits_json) : (row.habits_json || {}); } catch(e) {}
+              logsByDate[dKey] = {
+                ...getDayLog(dKey),
+                ...row,
+                date: dKey,
+                habits_json: parsedHabits,
+                emotion_tags: typeof row.emotion_tags === 'string' && row.emotion_tags ? row.emotion_tags.split(',').map(s => s.trim()) : []
+              };
+            });
           }
           if (Array.isArray(data.foodEntries)) {
             foodByDate[currentDate] = data.foodEntries;
@@ -802,8 +890,8 @@
           document.getElementById('syncStatusMsg').textContent = data.message || 'Sync error';
         }
       } catch (err) {
-        setSyncBadge('err', 'Offline / CORS Check Needed');
-        document.getElementById('syncStatusMsg').textContent = 'Could not reach Apps Script URL.';
+        setSyncBadge('err', 'Deploy Apps Script as "Anyone"');
+        document.getElementById('syncStatusMsg').textContent = 'Ensure Apps Script Web App has "Who has access: Anyone" and updated Code.gs.';
       }
     }
 
@@ -823,15 +911,15 @@
           setSyncBadge('err', 'Save failed: ' + (data.message || 'Error'));
         }
       } catch (e) {
-        setSyncBadge('err', 'Saved locally (Sheet unreachable)');
+        setSyncBadge('err', 'Saved locally (Check Sheet access)');
       }
     }
 
-    function pushDailyToSheet() {
-      const log = getDayLog(currentDate);
+    function pushSpecificDateToSheet(dateStr) {
+      const log = getDayLog(dateStr);
       postToAppsScript({
         action: 'upsertDaily',
-        data: { ...log, water_goal_ml: config.waterGoalMl }
+        data: { ...log, date: dateStr, water_goal_ml: log.water_goal_ml || config.waterGoalMl }
       });
     }
 
@@ -848,41 +936,88 @@
       const log = getDayLog(currentDate);
       const foods = foodByDate[currentDate] || [];
 
-      // Habits
-      let doneCount = 0;
-      const habitsHtml = habits.map(h => {
-        const st = log.habits_json[h.habit_id] || 'pending';
-        if (st === 'done' || st === 'min') doneCount++;
-        const isDone = st === 'done';
-        const isMin = st === 'min';
+      // 1. Streak Dashboard Cards
+      document.getElementById('streakDashboardCards').innerHTML = habits.map(h => {
+        const stats = computeHabitStats(h.habit_id);
         return `
-          <div class="bg-white rounded-2xl border ${isDone ? 'border-teal-300 bg-teal-50/30' : isMin ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'} p-3.5 flex items-center justify-between gap-3 shadow-2xs transition">
-            <div onclick="setHabitStatus('${h.habit_id}', 'done')" class="flex items-center gap-3 cursor-pointer flex-1">
-              <div class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs border ${isDone ? 'bg-teal-700 border-teal-700 text-white' : isMin ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300 bg-white text-transparent'}">
-                ${isMin ? 'M' : '&#10003;'}
-              </div>
-              <div>
-                <div class="text-sm font-bold ${isDone ? 'text-teal-950' : 'text-slate-800'}">${h.title}</div>
-                <div class="text-[11px] text-slate-500">${h.category} &bull; Min rule: <span class="font-medium">${h.min_viable_rule}</span></div>
-              </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">${h.category}</span>
+              <span class="text-xs font-extrabold text-orange-600">&#128293; ${stats.currentStreak}d</span>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold px-2 py-1 rounded-lg bg-orange-50 text-orange-700">&#128293; ${h.streak + (isDone || isMin ? 1 : 0)}d</span>
-              <button onclick="setHabitStatus('${h.habit_id}', 'min')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${isMin ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
-                Min
-              </button>
+            <div class="text-xs sm:text-sm font-bold text-slate-900 mt-1.5 leading-snug">${h.title}</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-1.5 border-t border-slate-100">
+              <span>Best: <strong class="text-slate-700">${stats.bestStreak}d</strong></span>
+              <span>Nov: <strong class="text-teal-700">${stats.novCompleted}d</strong></span>
             </div>
           </div>
         `;
       }).join('');
-      document.getElementById('habitsList').innerHTML = habitsHtml;
+
+      // 2. Habit x Date Matrix Grid
+      const matrixDates = getMatrixDates();
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+      document.getElementById('habitMatrixHead').innerHTML = `
+        <tr>
+          <th class="sticky-col bg-slate-50 py-2.5 px-3 min-w-[155px] sm:min-w-[190px] border-r border-slate-200 text-slate-700">Habit</th>
+          <th class="py-2.5 px-2 text-center min-w-[58px] border-r border-slate-200 text-orange-700">Streak</th>
+          ${matrixDates.map(dStr => {
+            const dObj = new Date(dStr + 'T00:00:00');
+            const isSelected = dStr === currentDate;
+            return `
+              <th onclick="onDatePick('${dStr}')" class="py-2 px-1.5 text-center min-w-[44px] cursor-pointer hover:bg-teal-50 transition ${isSelected ? 'bg-teal-100/70 text-teal-900' : ''}">
+                <div class="text-[9px] uppercase text-slate-400 font-semibold">${dayNames[dObj.getDay()]}</div>
+                <div class="text-[11px] font-extrabold">${dObj.getDate()} ${monthNames[dObj.getMonth()]}</div>
+              </th>
+            `;
+          }).join('')}
+        </tr>
+      `;
+
+      document.getElementById('habitMatrixBody').innerHTML = habits.map(h => {
+        const stats = computeHabitStats(h.habit_id);
+        return `
+          <tr class="bg-white hover:bg-slate-50/70">
+            <td class="sticky-col bg-white py-2.5 px-3 border-r border-slate-200">
+              <div class="font-bold text-slate-800 text-xs">${h.title}</div>
+              <div class="text-[10px] text-slate-400 truncate max-w-[145px] sm:max-w-[180px]">Min: ${h.min_viable_rule}</div>
+            </td>
+            <td class="py-2 px-2 text-center border-r border-slate-200 font-extrabold text-xs ${stats.currentStreak > 0 ? 'text-orange-600' : 'text-slate-400'}">
+              ${stats.currentStreak}d
+            </td>
+            ${matrixDates.map(dStr => {
+              const st = (logsByDate[dStr]?.habits_json || {})[h.habit_id] || 'pending';
+              const isSelected = dStr === currentDate;
+              let cellBtn = `<span class="w-7 h-7 rounded-lg border border-slate-200 bg-slate-50/70 inline-flex items-center justify-center text-slate-300 hover:border-teal-400">&middot;</span>`;
+              if (st === 'done') {
+                cellBtn = `<span class="w-7 h-7 rounded-lg bg-teal-600 text-white font-bold inline-flex items-center justify-center shadow-2xs">&#10003;</span>`;
+              } else if (st === 'min') {
+                cellBtn = `<span class="w-7 h-7 rounded-lg bg-amber-500 text-white font-bold text-[11px] inline-flex items-center justify-center shadow-2xs">M</span>`;
+              }
+              return `
+                <td onclick="cycleMatrixCell('${h.habit_id}', '${dStr}')" class="py-2 px-1 text-center cursor-pointer select-none ${isSelected ? 'bg-teal-50/40' : ''}">
+                  ${cellBtn}
+                </td>
+              `;
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      // Count today's completed habits for KPI strip
+      let doneCount = 0;
+      habits.forEach(h => {
+        const st = log.habits_json[h.habit_id];
+        if (st === 'done' || st === 'min') doneCount++;
+      });
 
       // Food
-      let totCal = 0, totPro = 0, totCarb = 0, totFib = 0;
+      let totCal = 0, totPro = 0, totFib = 0;
       foods.forEach(f => {
         totCal += Number(f.calories || 0);
         totPro += Number(f.protein_g || 0);
-        totCarb += Number(f.carbs_g || 0);
         totFib += Number(f.fiber_g || 0);
       });
       document.getElementById('macroSummaryBadge').textContent = `${totCal} kcal • ${totPro}g / ${config.proteinTargetG}g P`;
